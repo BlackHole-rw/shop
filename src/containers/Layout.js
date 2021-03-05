@@ -8,27 +8,87 @@ import {
   Image,
   List,
   Menu,
-  Segment
+  Segment,
 } from "semantic-ui-react";
 import { Link, withRouter } from "react-router-dom";
 import { connect } from "react-redux";
 import { logout } from "../store/actions/auth";
+import { cartFetch } from '../store/actions/cart';
+
 
 class CustomLayout extends React.Component {
+
+  componentDidMount() {
+    this.props.cartFetch();
+  }
+
   render() {
-    const { authenticated } = this.props;
+    const { authenticated, cart, loading } = this.props;
     return (
       <div>
-        <Menu fixed="top" inverted>
+        <Menu inverted>
           <Container>
             <Link to="/">
               <Menu.Item header>Home</Menu.Item>
             </Link>
-            {authenticated ? (
-              <Menu.Item header onClick={() => this.props.logout()}>
+
+            <Link to="/products">
+              <Menu.Item header>Product</Menu.Item>
+            </Link>
+          <Menu.Menu position='right'>
+
+          { authenticated
+
+          ?
+
+          (
+          <React.Fragment>
+            <Link to="/profile">
+              <Menu.Item header>Profile</Menu.Item>
+            </Link>
+            <Dropdown
+                loading={loading}
+                icon='cart'
+                text={`${cart !== null ? cart.order_items.length : 0}`}
+                className='item'
+            >
+                <Dropdown.Menu>
+                {cart !== null
+                ?
+                (
+                    <React.Fragment>
+                    {cart.order_items.map(order_item => {
+                        return (
+                        <Dropdown.Item key={order_item.id}>
+                            {order_item.quantity} x {" "} {order_item.item.title}
+                        </Dropdown.Item>
+                        )
+                    })}
+                    {cart.order_items.length < 1 ? (
+                        <Dropdown.Item>
+                            No item in your cart
+                        </Dropdown.Item>
+                    ) : null}
+                    <Dropdown.Divider />
+                    <Dropdown.Item
+                        icon='arrow right'
+                        text='Checkout'
+                        onClick={() => this.props.history.push('/order-summary')} />
+                    </React.Fragment>
+                ) : (<Dropdown.Item>
+                            No item in your cart
+                        </Dropdown.Item>)}
+                </Dropdown.Menu>
+            </Dropdown>
+            <Menu.Item header onClick={() => this.props.logout()}>
                 Logout
-              </Menu.Item>
-            ) : (
+            </Menu.Item>
+            </React.Fragment>
+            )
+
+            :
+
+            (
               <React.Fragment>
                 <Link to="/login">
                   <Menu.Item header>Login</Menu.Item>
@@ -36,8 +96,10 @@ class CustomLayout extends React.Component {
                 <Link to="/signup">
                   <Menu.Item header>Signup</Menu.Item>
                 </Link>
+
               </React.Fragment>
-            )}
+            )}}
+          </Menu.Menu>
           </Container>
         </Menu>
 
@@ -111,13 +173,16 @@ class CustomLayout extends React.Component {
 
 const mapStateToProps = state => {
   return {
-    authenticated: state.auth.token !== null
+    authenticated: state.auth.token !== null,
+    cart: state.cart.shoppingCart,
+    loading: state.cart.loading
   };
 };
 
 const mapDispatchToProps = dispatch => {
   return {
-    logout: () => dispatch(logout())
+    logout: () => dispatch(logout()),
+    cartFetch: () => dispatch(cartFetch())
   };
 };
 
